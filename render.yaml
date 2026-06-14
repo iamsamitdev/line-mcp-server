@@ -1,0 +1,18 @@
+# Render Blueprint สำหรับ deploy LINE MCP Server
+# อ้างอิง: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: line-mcp-server
+    runtime: node
+    plan: free
+    # pin Node 22 ผ่าน .nvmrc เพื่อเลี่ยงปัญหา corepack หายใน Node 25+
+    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    startCommand: pnpm start
+    healthCheckPath: /
+    envVars:
+      # ต้องกรอกเองในหน้า dashboard (ไม่ commit ลง git)
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      # ให้ Render สุ่มค่าให้อัตโนมัติ แล้วนำไปต่อท้าย URL ตอนเพิ่ม connector
+      - key: MCP_SECRET
+        generateValue: true
