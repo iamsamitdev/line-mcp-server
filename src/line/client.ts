@@ -34,6 +34,19 @@ async function readError(res: Response): Promise<string> {
   }
 }
 
+// ตอบกลับผ่าน replyToken (ใช้ได้ครั้งเดียวภายใน 1 นาที)
+export async function replyMessage(replyToken: string, text: string): Promise<void> {
+  const message: LineTextMessage = { type: "text", text }
+  const res = await fetch(`${LINE_API_BASE}/message/reply`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ replyToken, messages: [message] }),
+  })
+  if (!res.ok) {
+    throw new Error(`reply ล้มเหลว (${res.status}): ${await readError(res)}`)
+  }
+}
+
 // ยิง push ด้วย messages array (รองรับทั้ง text และ flex) ไปยังปลายทางเดียว
 async function callPush(to: string, messages: LineMessage[]): Promise<void> {
   const res = await fetch(`${LINE_API_BASE}/message/push`, {

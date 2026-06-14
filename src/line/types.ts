@@ -46,3 +46,30 @@ export interface LineMessageQuota {
 export interface LineMessageConsumption {
   totalUsage: number
 }
+
+// --- Webhook event types ---
+
+export interface LineWebhookSource {
+  type: "user" | "group" | "room"
+  userId?: string
+  groupId?: string
+  roomId?: string
+}
+
+export interface LineWebhookEventBase {
+  type: string
+  timestamp: number
+  source: LineWebhookSource
+  replyToken?: string
+  mode: "active" | "standby"
+}
+
+export interface LineFollowEvent extends LineWebhookEventBase {
+  type: "follow"
+  replyToken: string
+}
+
+export interface LineWebhookBody {
+  destination: string
+  events: LineWebhookEventBase[]
+}

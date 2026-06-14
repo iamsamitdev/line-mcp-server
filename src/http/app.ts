@@ -4,6 +4,8 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js"
 import { env } from "@/config/env"
 import { createLineMcpServer } from "@/mcp/server"
+import { replyMessage } from "@/line/client"
+import type { LineWebhookBody } from "@/line/types"
 
 // เก็บ transport แยกตาม session id เพื่อรองรับการเชื่อมต่อหลาย client พร้อมกัน
 const transports: Record<string, StreamableHTTPServerTransport> = {}
@@ -19,6 +21,27 @@ export function createApp() {
   // health check ให้ Render ตรวจสอบว่า service ยังทำงานอยู่
   app.get("/", (_req: Request, res: Response) => {
     res.json({ status: "ok", service: "line-messaging-mcp" })
+  })
+
+  // LINE Webhook: รับ event จาก LINE Platform (follow, message, ฯลฯ)
+  app.post("/webhook", async (req: Request, res: Response) => {
+    const body = req.body as LineWebhookBody
+
+    // ตอบ 200 ทันทีเพื่อไม่ให้ LINE timeout แล้ว retry
+    res.status(200).send("OK")
+
+    for (const event of body.events ?? []) {
+      if (event.type === "follow" && event.replyToken && event.source.userId) {
+        try {
+          await replyMessage(
+            event.replyToken,
+            `ขอบคุณที่เพิ่มบอทเป็นเพื่อนนะครับ 🎉\nUser ID ของคุณคือ:\n${event.source.userId}`,
+          )
+        } catch (err) {
+          console.error("reply follow event ล้มเหลว:", err)
+        }
+      }
+    }
   })
 
   // POST: รับ request จาก client รวมถึง initialize เพื่อเริ่ม session
